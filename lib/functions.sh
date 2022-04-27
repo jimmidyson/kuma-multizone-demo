@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copyright 2022 Jimmi Dyson
+# SPDX-License-Identifier: Apache-2.0
 
 function ensure_kind_cluster() {
   local -r CLUSTER_NAME="${1}"

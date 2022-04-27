@@ -1,3 +1,6 @@
+# Copyright 2022 Jimmi Dyson
+# SPDX-License-Identifier: Apache-2.0
+
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v4.2.0
@@ -47,3 +50,31 @@ repos:
   hooks:
   - id: markdownlint
     stages: [commit]
+- repo: https://github.com/Lucas-C/pre-commit-hooks
+  rev: v1.1.12
+  hooks:
+  - id: insert-license
+    name: License headers - shell scripts
+    stages: [commit]
+    files: \.sh$
+    args:
+      - --license-filepath
+      - header.txt
+      - --comment-style
+      - '#'
+  - id: insert-license
+    name: License headers - Markdown
+    stages: [commit]
+    files: \.md$
+    args:
+      - --license-filepath
+      - header.txt
+      - --comment-style
+      - <!--|| -->
+  - id: insert-license
+    name: License headers - Markdown
+    stages: [commit]
+    files: \.yaml$
+    args:
+      - --license-filepath
+      - header.txt
