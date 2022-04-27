@@ -10,6 +10,7 @@ if [ -z ${SCRIPT_DIR+x} ]; then
   readonly SCRIPT_DIR
 fi
 
+# shellcheck source=./lib/variables.sh
 source "${SCRIPT_DIR}/lib/variables.sh"
 
 pushd "${SCRIPT_DIR}" &>/dev/null

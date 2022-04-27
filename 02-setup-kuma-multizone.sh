@@ -10,7 +10,9 @@ if [ -z ${SCRIPT_DIR+x} ]; then
   readonly SCRIPT_DIR
 fi
 
+# shellcheck source=./lib/functions.sh
 source "${SCRIPT_DIR}/lib/functions.sh"
+# shellcheck source=./lib/variables.sh
 source "${SCRIPT_DIR}/lib/variables.sh"
 
 install_kuma_global

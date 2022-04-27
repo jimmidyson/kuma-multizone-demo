@@ -86,26 +86,6 @@ function install_kuma_global() {
     --namespace kuma-global-system --create-namespace \
     --set controlPlane.mode=global --set nameOverride=kuma-global \
     kuma/kuma
-
-  cat <<'EOF' | global_vcluster_connect kubectl apply --server-side -f -
-apiVersion: kuma.io/v1alpha1
-kind: Mesh
-metadata:
-  name: default
-spec:
-  mtls:
-    enabledBackend: kuma-global-demo-ca
-    backends:
-      - name: kuma-global-demo-ca
-        type: builtin
-        dpCert:
-          rotation:
-            expiration: 1d
-        conf:
-          caCert:
-            RSAbits: 4096
-            expiration: 10y
-EOF
 }
 
 function install_kuma_zone() {

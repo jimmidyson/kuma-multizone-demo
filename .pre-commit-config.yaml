@@ -44,7 +44,7 @@ repos:
   hooks:
   - id: shellcheck
     stages: [commit]
-    args: ["-e", "SC2211"]
+    args: ["-x"]
 - repo: https://github.com/igorshubovych/markdownlint-cli
   rev: v0.31.1
   hooks:
@@ -72,7 +72,7 @@ repos:
       - --comment-style
       - <!--|| -->
   - id: insert-license
-    name: License headers - Markdown
+    name: License headers - YAML
     stages: [commit]
     files: \.yaml$
     args:
