@@ -2,7 +2,7 @@
 
 function ensure_kind_cluster() {
   local -r CLUSTER_NAME="${1}"
-  (kind get clusters 2>/dev/null | grep -Eo "^${CLUSTER_NAME}$" &>/dev/null) || \
+  (kind get clusters 2>/dev/null | grep -Eo "^${CLUSTER_NAME}$" &>/dev/null) ||
     cat <<EOF | kind create cluster --name="${CLUSTER_NAME}" --config -
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
@@ -23,32 +23,32 @@ kubeadmConfigPatches:
   nodeStatusMaxImages: -1
 EOF
 
-  (helm repo list | cut -d' ' -f1 | grep -Eo '^projectcalico$' &>/dev/null) || \
+  (helm repo list | cut -d' ' -f1 | grep -Eo '^projectcalico$' &>/dev/null) ||
     helm repo add projectcalico https://projectcalico.docs.tigera.io/charts
 
   helm upgrade --install --kube-context kind-"${CLUSTER_NAME}" calico projectcalico/tigera-operator
 
-  local -r CONTAINER_IP="$( \
-            docker inspect \
-            -f '"{{range .NetworkSettings.Networks}}{{.IPAddress}}{{break}}{{end}}"' \
-            "${CLUSTER_NAME}-control-plane" \
-          )"
+  local -r CONTAINER_IP="$(
+    docker inspect \
+      -f '"{{range .NetworkSettings.Networks}}{{.IPAddress}}{{break}}{{end}}"' \
+      "${CLUSTER_NAME}-control-plane"
+  )"
   local -r SUBNET_PREFIX="$(echo "${CONTAINER_IP}" | gojq -r '. | scan("^\\d+\\.\\d+")')"
   local CLUSTER_INDEX=0
   for i in "${!ALL_CLUSTER_NAMES[@]}"; do
-    if [[ "${ALL_CLUSTER_NAMES[$i]}" = "${CLUSTER_NAME}" ]]; then
+    if [[ ${ALL_CLUSTER_NAMES[$i]} == "${CLUSTER_NAME}" ]]; then
       CLUSTER_INDEX=${i}
       break
     fi
   done
-  local -r FIRST_IP="$((180+CLUSTER_INDEX*20))"
-  local -r METALLB_ADDRESS_RANGE="${SUBNET_PREFIX}.255.${FIRST_IP}-${SUBNET_PREFIX}.255.$((FIRST_IP+19))"
+  local -r FIRST_IP="$((180 + CLUSTER_INDEX * 20))"
+  local -r METALLB_ADDRESS_RANGE="${SUBNET_PREFIX}.255.${FIRST_IP}-${SUBNET_PREFIX}.255.$((FIRST_IP + 19))"
 
-  (helm repo list | cut -d' ' -f1 | grep -Eo '^metallb$' &>/dev/null) || \
+  (helm repo list | cut -d' ' -f1 | grep -Eo '^metallb$' &>/dev/null) ||
     helm repo add metallb https://metallb.github.io/metallb
 
   cat <<EOF | helm upgrade --install --kube-context kind-"${CLUSTER_NAME}" \
-                --namespace metallb-system --create-namespace metallb metallb/metallb -f -
+    --namespace metallb-system --create-namespace metallb metallb/metallb -f -
 configInline:
   address-pools:
    - name: default
@@ -70,20 +70,20 @@ function delete_kind_cluster() {
 }
 
 function install_kuma_global() {
-  kubectl --context kind-"${GLOBAL_CLUSTER_NAME}" get ns kuma-global-system &>/dev/null || \
+  kubectl --context kind-"${GLOBAL_CLUSTER_NAME}" get ns kuma-global-system &>/dev/null ||
     kubectl --context kind-"${GLOBAL_CLUSTER_NAME}" create ns kuma-global-system
 
-  (vcluster --context kind-kuma-global list -n kuma-global-system --output json | \
-    gojq -e '.[].Name == "kuma-global"' &>/dev/null) || \
-  vcluster --context kind-"${GLOBAL_CLUSTER_NAME}" create kuma-global -n kuma-global-system --distro k8s
+  (vcluster --context kind-kuma-global list -n kuma-global-system --output json |
+    gojq -e '.[].Name == "kuma-global"' &>/dev/null) ||
+    vcluster --context kind-"${GLOBAL_CLUSTER_NAME}" create kuma-global -n kuma-global-system --distro k8s
 
-  (helm repo list | cut -d' ' -f1 | grep -Eo '^kuma$' &>/dev/null) || \
+  (helm repo list | cut -d' ' -f1 | grep -Eo '^kuma$' &>/dev/null) ||
     helm repo add kuma https://kumahq.github.io/charts
 
   global_vcluster_connect helm upgrade --install --wait kuma-global \
-      --namespace kuma-global-system --create-namespace \
-      --set controlPlane.mode=global --set nameOverride=kuma-global \
-      kuma/kuma
+    --namespace kuma-global-system --create-namespace \
+    --set controlPlane.mode=global --set nameOverride=kuma-global \
+    kuma/kuma
 
   cat <<'EOF' | global_vcluster_connect kubectl apply --server-side -f -
 apiVersion: kuma.io/v1alpha1
@@ -109,12 +109,12 @@ EOF
 function install_kuma_zone() {
   local -r CLUSTER_NAME="${1}"
 
-  local -r KDS_GLOBAL_IP="$( \
+  local -r KDS_GLOBAL_IP="$(
     global_vcluster_connect kubectl get services -n kuma-global-system \
       kuma-global-global-zone-sync -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
   )"
 
-  (helm repo list | cut -d' ' -f1 | grep -Eo '^kuma$' &>/dev/null) || \
+  (helm repo list | cut -d' ' -f1 | grep -Eo '^kuma$' &>/dev/null) ||
     helm repo add kuma https://kumahq.github.io/charts
 
   helm upgrade --install kuma \

@@ -21,7 +21,7 @@ if [ "$(kumactl version -a 2>/dev/null | grep -E '^Version:' | grep -Eo '[0-9].*
   echo "kumactl ${KUMA_VERSION} is already installed"
 else
   echo "Downloading kumactl from https://download.konghq.com/mesh-alpine/kuma-${KUMA_VERSION}-centos-amd64.tar.gz"
-  curl -fsSL https://download.konghq.com/mesh-alpine/kuma-"${KUMA_VERSION}"-centos-amd64.tar.gz | \
+  curl -fsSL https://download.konghq.com/mesh-alpine/kuma-"${KUMA_VERSION}"-centos-amd64.tar.gz |
     tar xz --strip-components=3 -C bin --wildcards -- '*/kumactl'
 fi
 
