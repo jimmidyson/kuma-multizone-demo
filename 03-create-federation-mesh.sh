@@ -61,10 +61,32 @@ spec:
         k8s.kuma.io/namespace: multicluster-demo-cp
   destinations:
     - match:
-        federation.example.com/apiserver: "true"
+        k8s.kuma.io/namespace: multicluster-demo
+        k8s.kuma.io/service-name: apiserver-socat
 EOF
 
 for CLUSTER_NAME in "${ALL_CLUSTER_NAMES[@]}"; do
-  kubectl kustomize "${SCRIPT_DIR}/manifests/overlays/${CLUSTER_NAME}" |
-    kubectl --context kind-"${CLUSTER_NAME}" apply -f - --server-side
+  kubectl --context kind-"${CLUSTER_NAME}" apply -f "${SCRIPT_DIR}/manifests" --server-side
 done
+
+cat <<'EOF' | global_vcluster_connect kubectl apply --server-side -f -
+apiVersion: kuma.io/v1alpha1
+kind: VirtualOutbound
+metadata:
+  name: zoned-apiserver-socat
+mesh: multicluster
+spec:
+  selectors:
+    - match:
+        k8s.kuma.io/service-name: "apiserver-socat"
+  conf:
+    host: "apiserver.{{.zone}}.mesh"
+    port: "{{.port}}"
+    parameters:
+      - name: service
+        tagKey: "kuma.io/service"
+      - name: zone
+        tagKey: "kuma.io/zone"
+      - name: port
+        tagKey: "k8s.kuma.io/service-port"
+EOF

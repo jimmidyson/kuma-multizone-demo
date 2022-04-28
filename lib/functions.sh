@@ -101,7 +101,8 @@ function install_kuma_zone() {
 
   helm upgrade --install kuma \
     --kube-context kind-"${CLUSTER_NAME}" --namespace kuma-system --create-namespace \
-    --set controlPlane.mode=zone --set controlPlane.zone="${CLUSTER_NAME}" --set ingress.enabled=true \
+    --set controlPlane.mode=zone --set controlPlane.zone="${CLUSTER_NAME}" \
+    --set ingress.enabled=true --set egress.enabled=true \
     --set controlPlane.kdsGlobalAddress=grpcs://"${KDS_GLOBAL_IP}":5685 \
     --set cni.enabled=true \
     --set cni.chained=true \

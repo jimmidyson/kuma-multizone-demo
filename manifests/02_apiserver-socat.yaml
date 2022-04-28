@@ -5,20 +5,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: socat-apiserver
+  name: apiserver-socat
   namespace: multicluster-demo
 spec:
   selector:
     matchLabels:
-      app: socat-apiserver
+      app: apiserver-socat
   replicas: 1
   template:
     metadata:
       annotations:
         kuma.io/mesh: multicluster
       labels:
-        app: socat-apiserver
-        federation.example.com/apiserver: "true"
+        app: apiserver-socat
     spec:
       containers:
         - name: socat
@@ -33,13 +32,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: socat-apiserver
+  name: apiserver-socat
   namespace: multicluster-demo
   annotations:
     443.service.kuma.io/protocol: tcp
 spec:
   selector:
-    app: socat-apiserver
+    app: apiserver-socat
   ports:
   - protocol: TCP
     port: 443
