@@ -29,6 +29,18 @@ required tools and versions. In additions, to those you will also need
 [`kumactl`](https://kuma.io/docs/1.6.x/installation/kubernetes/#_1-download-kumactl) (also installed
 via `./00-install-tools.sh` btw).
 
+### Docker Hub rate limiting
+
+When running the demo, you may hit [Docker Hub pull rate limiting](https://docs.docker.com/docker-hub/download-rate-limit/).
+If you have a paid Docker Hub account, you can increase pull rate limits by authenticating to Docker
+Hub. Before creating the KinD clusters below, export the following environment vaiables:
+
+```bash
+export DOCKER_USERNAME=<username></username> DOCKER_PASSWORD=<password>
+```
+
+These credentials will then be used by the KinD clusters when pulling images.
+
 ## Running
 
 Once you've got all the tools set up, you can then create the required kind clusters:
