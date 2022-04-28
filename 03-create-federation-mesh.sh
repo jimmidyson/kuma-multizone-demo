@@ -21,6 +21,9 @@ kind: Mesh
 metadata:
   name: multicluster
 spec:
+  routing:
+    zoneEgress: true
+    localityAwareLoadBalancing: true
   networking:
     outbound:
       passthrough: false
@@ -66,27 +69,5 @@ spec:
 EOF
 
 for CLUSTER_NAME in "${ALL_CLUSTER_NAMES[@]}"; do
-  kubectl --context kind-"${CLUSTER_NAME}" apply -f "${SCRIPT_DIR}/manifests" --server-side
+  kubectl --context kind-"${CLUSTER_NAME}" apply -k "${SCRIPT_DIR}/manifests/overlays/${CLUSTER_NAME}" --server-side
 done
-
-cat <<'EOF' | global_vcluster_connect kubectl apply --server-side -f -
-apiVersion: kuma.io/v1alpha1
-kind: VirtualOutbound
-metadata:
-  name: zoned-apiserver-socat
-mesh: multicluster
-spec:
-  selectors:
-    - match:
-        k8s.kuma.io/service-name: "apiserver-socat"
-  conf:
-    host: "apiserver.{{.zone}}.mesh"
-    port: "{{.port}}"
-    parameters:
-      - name: service
-        tagKey: "kuma.io/service"
-      - name: zone
-        tagKey: "kuma.io/zone"
-      - name: port
-        tagKey: "k8s.kuma.io/service-port"
-EOF
