@@ -109,6 +109,7 @@ function install_kuma_zone() {
     --set cni.netDir="/etc/cni/net.d" \
     --set cni.binDir=/opt/cni/bin \
     --set cni.confName=10-calico.conflist \
+    --set controlPlane.defaults.skipMeshCreation=true \
     kuma/kuma
 }
 
