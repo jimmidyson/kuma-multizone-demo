@@ -175,6 +175,6 @@ function install_kuma_zone() {
 }
 
 function global_vcluster_connect() {
-  vcluster --context kind-"${GLOBAL_CLUSTER_NAME}" connect kuma-global -n kuma-global-system -- \
+  vcluster --silent --context kind-"${GLOBAL_CLUSTER_NAME}" connect kuma-global -n kuma-global-system -- \
     "${@}"
 }
