@@ -11,4 +11,4 @@ patchesJson6902:
     patch: |-
       - op: replace
         path: /metadata/name
-        value: socat-apiserver-kuma-remote-2
+        value: k8s-api-kuma-remote-2

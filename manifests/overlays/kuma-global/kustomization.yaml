@@ -11,4 +11,4 @@ patchesJson6902:
     patch: |-
       - op: replace
         path: /metadata/name
-        value: socat-apiserver-kuma-global
+        value: k8s-api-kuma-global
