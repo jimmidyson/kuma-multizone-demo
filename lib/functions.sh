@@ -137,9 +137,8 @@ function install_kuma_global() {
   kubectl --context kind-"${GLOBAL_CLUSTER_NAME}" get ns kuma-global-system &>/dev/null ||
     kubectl --context kind-"${GLOBAL_CLUSTER_NAME}" create ns kuma-global-system
 
-  (vcluster --context kind-kuma-global list -n kuma-global-system --output json |
-    gojq -e '.[].Name == "kuma-global"' &>/dev/null) ||
-    vcluster --context kind-"${GLOBAL_CLUSTER_NAME}" create kuma-global -n kuma-global-system --distro k8s
+  vcluster --context kind-"${GLOBAL_CLUSTER_NAME}" \
+    create kuma-global -n kuma-global-system --distro k8s --upgrade
 
   (helm repo list | cut -d' ' -f1 | grep -Eo '^kuma$' &>/dev/null) ||
     helm repo add kuma https://kumahq.github.io/charts
