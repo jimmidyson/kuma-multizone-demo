@@ -146,6 +146,7 @@ function install_kuma_global() {
   global_vcluster_connect helm upgrade --install --wait kuma-global \
     --namespace kuma-global-system --create-namespace \
     --set controlPlane.mode=global --set nameOverride=kuma-global \
+    --set controlPlane.defaults.skipMeshCreation=true \
     kuma/kuma
 }
 
@@ -170,7 +171,6 @@ function install_kuma_zone() {
     --set cni.netDir="/etc/cni/net.d" \
     --set cni.binDir=/opt/cni/bin \
     --set cni.confName=10-calico.conflist \
-    --set controlPlane.defaults.skipMeshCreation=true \
     kuma/kuma
 }
 
