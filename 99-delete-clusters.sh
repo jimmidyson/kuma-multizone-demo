@@ -18,3 +18,5 @@ source "${SCRIPT_DIR}/lib/variables.sh"
 for c in "${ALL_CLUSTER_NAMES[@]}"; do
   delete_kind_cluster "${c}"
 done
+
+rm -rf "${SCRIPT_DIR}"/.tmp/

@@ -4,6 +4,52 @@
 
 function ensure_kind_cluster() {
   local -r CLUSTER_NAME="${1}"
+
+  mkdir -p "${SCRIPT_DIR}"/.tmp/image-credential-provider/{bin,conf}
+
+  cat <<'EOF' >"${SCRIPT_DIR}"/.tmp/image-credential-provider/conf/config.yaml
+apiVersion: kubelet.config.k8s.io/v1alpha1
+kind: CredentialProviderConfig
+providers:
+- name: file-reader
+  matchImages:
+  - docker.io
+  defaultCacheDuration: "1h"
+  apiVersion: credentialprovider.kubelet.k8s.io/v1alpha1
+EOF
+
+  cat <<'EOF' >"${SCRIPT_DIR}"/.tmp/image-credential-provider/bin/file-reader
+#!/usr/bin/env bash
+cat /etc/kubernetes/image-credential-provider/conf/credentials.json
+EOF
+  chmod 700 "${SCRIPT_DIR}"/.tmp/image-credential-provider/bin/file-reader
+
+  if [ -n "${DOCKER_USERNAME:-}" ]; then
+    cat <<EOF >"${SCRIPT_DIR}"/.tmp/image-credential-provider/conf/credentials.json
+{
+  "kind": "CredentialProviderResponse",
+  "apiVersion": "credentialprovider.kubelet.k8s.io/v1alpha1",
+  "cacheKeyType": "Registry",
+  "cacheDuration": "1h",
+  "auth": {
+    "docker.io": {
+      "username": "${DOCKER_USERNAME}",
+      "password": "${DOCKER_PASSWORD}"
+    }
+  }
+}
+EOF
+  else
+    cat <<EOF >"${SCRIPT_DIR}"/.tmp/image-credential-provider/conf/credentials.json
+{
+  "kind": "CredentialProviderResponse",
+  "apiVersion": "credentialprovider.kubelet.k8s.io/v1alpha1",
+  "auth": null
+}
+EOF
+  fi
+  chmod 600 "${SCRIPT_DIR}"/.tmp/image-credential-provider/conf/credentials.json
+
   (kind get clusters 2>/dev/null | grep -Eo "^${CLUSTER_NAME}$" &>/dev/null) ||
     cat <<EOF | kind create cluster --name="${CLUSTER_NAME}" --config -
 kind: Cluster
@@ -11,18 +57,34 @@ apiVersion: kind.x-k8s.io/v1alpha4
 networking:
   disableDefaultCNI: true # disable kindnet
   podSubnet: 192.168.0.0/16 # set to Calico's default subnet
-containerdConfigPatches:
-- |-
-  [plugins."io.containerd.grpc.v1.cri".registry.configs."registry-1.docker.io".auth]
-    username = "${DOCKER_USERNAME:-}"
-    password = "${DOCKER_PASSWORD:-}"
-    auth = ""
-    identitytoken = ""
+featureGates:
+  "KubeletCredentialProviders": true
 kubeadmConfigPatches:
 - |
   apiVersion: kubelet.config.k8s.io/v1beta1
   kind: KubeletConfiguration
   nodeStatusMaxImages: -1
+- |
+  kind: JoinConfiguration
+  nodeRegistration:
+    kubeletExtraArgs:
+      image-credential-provider-config: /etc/kubernetes/image-credential-provider/conf/config.yaml
+      image-credential-provider-bin-dir: /etc/kubernetes/image-credential-provider/bin/
+- |
+  kind: InitConfiguration
+  nodeRegistration:
+    kubeletExtraArgs:
+      image-credential-provider-config: /etc/kubernetes/image-credential-provider/conf/config.yaml
+      image-credential-provider-bin-dir: /etc/kubernetes/image-credential-provider/bin/
+nodes:
+- role: control-plane
+  extraMounts:
+  - hostPath: ${SCRIPT_DIR}/.tmp/image-credential-provider/bin/
+    containerPath: /etc/kubernetes/image-credential-provider/bin/
+    readOnly: true
+  - hostPath: ${SCRIPT_DIR}/.tmp/image-credential-provider/conf
+    containerPath: /etc/kubernetes/image-credential-provider/conf/
+    readOnly: true
 EOF
 
   (helm repo list | cut -d' ' -f1 | grep -Eo '^projectcalico$' &>/dev/null) ||
