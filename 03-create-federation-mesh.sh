@@ -64,10 +64,52 @@ spec:
         k8s.kuma.io/namespace: multicluster-demo-cp
   destinations:
     - match:
-        k8s.kuma.io/namespace: multicluster-demo
-        k8s.kuma.io/service-name: apiserver-socat
+        kuma.io/service: '*'
 EOF
 
 for CLUSTER_NAME in "${ALL_CLUSTER_NAMES[@]}"; do
-  kubectl --context kind-"${CLUSTER_NAME}" apply -k "${SCRIPT_DIR}/manifests/overlays/${CLUSTER_NAME}" --server-side
+  kubectl create namespace --dry-run=client -oyaml multicluster-demo |
+    kubectl --context kind-"${CLUSTER_NAME}" apply --server-side -f -
+
+  CLUSTER_KUBERNETES_API_ENDPOINTS="$(kubectl --context kind-"${CLUSTER_NAME}" \
+    get endpoints -n default -ojson kubernetes |
+    gojq -rc '.subsets')"
+
+  cat <<EOF | kubectl --context kind-"${CLUSTER_NAME}" apply -f - --server-side
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubernetes-api-${CLUSTER_NAME}
+  namespace: multicluster-demo
+spec:
+  type: ClusterIP
+  ports:
+  - name: https
+    port: 443
+    protocol: TCP
+    targetPort: 6443
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: kubernetes-api-${CLUSTER_NAME}
+  namespace: multicluster-demo
+subsets: ${CLUSTER_KUBERNETES_API_ENDPOINTS}
+EOF
+
+  cat <<EOF | global_vcluster_connect kubectl apply --server-side -f -
+apiVersion: kuma.io/v1alpha1
+kind: ExternalService
+mesh: multicluster
+metadata:
+  name: kubernetes-api.${CLUSTER_NAME}
+spec:
+  tags:
+    kuma.io/service: kubernetes-api.${CLUSTER_NAME}
+    kuma.io/zone: ${CLUSTER_NAME}
+    kuma.io/protocol: tcp
+  networking:
+    address: kubernetes-api-${CLUSTER_NAME}.multicluster-demo.svc:443
+EOF
 done
